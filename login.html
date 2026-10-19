@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in | SLSQ Sport Participation</title>
+<link rel="stylesheet" href="/login.css">
+</head>
+<body>
+<div class="login">
+  <div class="hd"><h1 style="font-size:20px">SLSQ Sport Participation</h1><div style="opacity:.85;font-size:13px;margin-top:4px">Internal dashboard (dev)</div></div>
+  <form method="post" action="/login">
+    <label>Access level
+      <select name="username"><option value="viewer">Viewer (exec and board)</option><option value="admin">Admin (sport team)</option></select>
+    </label>
+    <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+    <div id="msg" class="err" role="alert"></div>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+</div>
+<script src="/login.js"></script>
+</body>
+</html>
