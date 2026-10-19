@@ -6,7 +6,7 @@ Maroon theme. Whole site needs a login (Viewer for exec and board, Admin for the
 
 ## Easiest route: Fly.io website (no command window)
 
-1. Put this folder in a new GitHub repository (GitHub website: New repository, then Add file, Upload files, drag the contents in).
+1. Put these files in a new GitHub repository (all files sit in one flat list, no folders) (GitHub website: New repository, then Add file, Upload files, drag the contents in).
 2. In Fly.io: Create, Launch an App, choose the GitHub repository, and name it (for example slsq-sport-dev).
 3. In the app's Secrets, add `VIEWER_PASSWORD` and `ADMIN_PASSWORD` (each 12+ characters, kept in your password manager).
 4. Deploy, open the link and sign in as Admin. The Board Summary should show 3,613 core entries for 2026.
@@ -71,7 +71,7 @@ Admin page, section 1: upload the new entries workbook. You see a preview of eve
 - 2025 is labelled indicative (TC Alfred). 2020 is labelled COVID.
 - School league figures are excluded. Interbranch (fixed 192) is not judged.
 - No financial data anywhere.
-- Every number comes from one calculation (`server/calc.js`), so pages cannot disagree. `npm test` checks this.
+- Every number comes from one calculation (`calc.js`), so pages cannot disagree. `npm test` checks this.
 
 ## Run locally
 

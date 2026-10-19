@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "start": "node server/index.js",
-    "test": "node --test tests/*.test.js",
-    "hash": "node scripts/hash.js",
-    "seed": "node scripts/make-seed.js"
+    "start": "node index.js",
+    "test": "node --test *.test.js",
+    "hash": "node hash.js",
+    "seed": "node make-seed.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
