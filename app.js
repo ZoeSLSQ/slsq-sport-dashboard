@@ -297,7 +297,7 @@ async function render() {
   const items = Object.entries(PAGES).filter(([id]) => id !== 'admin' || S.meta.role === 'admin');
   $('nav').innerHTML = items.map(([id, [name]]) => `<a href="#/${id}" class="${id === k ? 'on' : ''}">${name}</a>`).join('');
   const open = S.meta.openViewing && S.meta.role !== 'admin';
-  $('who').firstChild.textContent = open ? 'Open viewing (no login)' : S.meta.role === 'admin' ? 'Admin' : 'Viewer';
+  $('who').textContent = open ? 'Open viewing (no login)' : S.meta.role === 'admin' ? 'Admin' : 'Viewer';
   document.querySelector('.who form').style.display = open ? 'none' : '';
   const link = $('admin-link');
   if (link) link.style.display = open && S.meta.adminEnabled ? '' : 'none';
