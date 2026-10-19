@@ -5,8 +5,9 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-export const DATA_DIR = process.env.DATA_DIR || path.join(here, '..', 'data');
-const SEED = path.join(here, '..', 'seed', 'seed.json');
+export const DATA_DIR = process.env.DATA_DIR || path.join(here, 'data');
+// Works whether seed.json sits next to this file or in a seed/ folder.
+const SEED = [path.join(here, 'seed.json'), path.join(here, 'seed', 'seed.json'), path.join(here, '..', 'seed', 'seed.json')].find((f) => fs.existsSync(f)) || path.join(here, 'seed.json');
 
 for (const d of ['', 'versions', 'previews']) fs.mkdirSync(path.join(DATA_DIR, d), { recursive: true });
 
