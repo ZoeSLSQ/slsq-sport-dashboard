@@ -8,6 +8,8 @@ primary_region = "syd"
   NODE_ENV = "production"
   PORT = "8080"
   DATA_DIR = "/data"
+  # Open viewing: no login to view. Remove this line (and add passwords) to lock the site.
+  OPEN_VIEWING = "yes"
   # Optional: switch on the live membership link (read only).
   # MEMBERSHIP_API_URL = "https://slsq-membership-dashboard.fly.dev/api/data"
 

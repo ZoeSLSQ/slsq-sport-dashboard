@@ -11,7 +11,7 @@ import * as store from './store.js';
 import { fetchLive, liveConfigured } from './membership.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const PUBLIC = path.join(here, '..', 'public');
+const PUBLIC = here;
 const prod = process.env.NODE_ENV === 'production';
 
 // Passwords can be supplied as hashes (VIEWER_PASSWORD_HASH / ADMIN_PASSWORD_HASH)
@@ -23,11 +23,18 @@ function hashFrom(hashVar, plainVar) {
 }
 const VIEWER_HASH = hashFrom('VIEWER_PASSWORD_HASH', 'VIEWER_PASSWORD');
 const ADMIN_HASH = hashFrom('ADMIN_PASSWORD_HASH', 'ADMIN_PASSWORD');
-const SECRET = process.env.SESSION_SECRET || (VIEWER_HASH && ADMIN_HASH ? crypto.createHash('sha256').update(`${VIEWER_HASH}|${ADMIN_HASH}`).digest('hex') : null);
-if (!VIEWER_HASH || !ADMIN_HASH || !SECRET || SECRET.length < 24) {
-  console.error('Set VIEWER_PASSWORD and ADMIN_PASSWORD (each 12+ characters) as secrets. See README.');
+// Open viewing mode: OPEN_VIEWING=yes and no viewer password. Anyone with the link can view.
+// Admin tools stay off until ADMIN_PASSWORD is set, and then need an Admin sign-in at /login.
+const OPEN = process.env.OPEN_VIEWING === 'yes' && !VIEWER_HASH;
+const SECRET =
+  process.env.SESSION_SECRET ||
+  (VIEWER_HASH && ADMIN_HASH ? crypto.createHash('sha256').update(`${VIEWER_HASH}|${ADMIN_HASH}`).digest('hex') : null) ||
+  (OPEN ? crypto.randomBytes(32).toString('hex') : null);
+if (!OPEN && (!VIEWER_HASH || !ADMIN_HASH || !SECRET || SECRET.length < 24)) {
+  console.error('Set VIEWER_PASSWORD and ADMIN_PASSWORD (each 12+ characters) as secrets, or set OPEN_VIEWING=yes. See README.');
   process.exit(1);
 }
+if (OPEN) console.warn('OPEN VIEWING MODE: no login for viewing. Admin tools are ' + (ADMIN_HASH ? 'protected by the admin password.' : 'switched off.'));
 const DUMMY = bcrypt.hashSync('not-a-real-password', 10);
 
 const app = express();
@@ -54,15 +61,15 @@ app.get('/health', (req, res) => res.send('ok'));
 const fails = new Map(); // ip -> { n, until }
 const tooMany = (ip) => (fails.get(ip)?.until ?? 0) > Date.now();
 
-app.get('/login', (req, res) => res.sendFile(path.join(PUBLIC, 'login.html')));
+app.get('/login', (req, res) => (OPEN && !ADMIN_HASH ? res.redirect('/') : res.sendFile(path.join(PUBLIC, 'login.html'))));
 app.get('/login.css', (req, res) => res.sendFile(path.join(PUBLIC, 'style.css')));
 app.get('/login.js', (req, res) => res.sendFile(path.join(PUBLIC, 'login.js')));
 app.post('/login', async (req, res) => {
   const ip = req.ip;
   if (tooMany(ip)) return res.status(429).redirect('/login?e=wait');
   const role = req.body.username === 'admin' ? 'admin' : req.body.username === 'viewer' ? 'viewer' : null;
-  const hash = role === 'admin' ? ADMIN_HASH : role === 'viewer' ? VIEWER_HASH : DUMMY;
-  const ok = await bcrypt.compare(String(req.body.password || ''), hash);
+  const hash = (role === 'admin' ? ADMIN_HASH : role === 'viewer' ? VIEWER_HASH : null) || DUMMY;
+  const ok = (await bcrypt.compare(String(req.body.password || ''), hash)) && hash !== DUMMY;
   if (ok && role) {
     fails.delete(ip);
     req.session = { role, at: Date.now() };
@@ -84,11 +91,13 @@ app.post('/logout', (req, res) => {
 
 // ---------- everything below needs a login ----------
 app.use((req, res, next) => {
-  if (req.session?.role) return next();
+  req.role = req.session?.role || (OPEN ? 'viewer' : null);
+  if (req.role) return next();
   if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Please sign in.' });
   res.redirect('/login');
 });
-const adminOnly = (req, res, next) => (req.session.role === 'admin' ? next() : res.status(403).json({ error: 'Admin only.' }));
+const adminOnly = (req, res, next) =>
+  req.role === 'admin' ? next() : res.status(403).json({ error: OPEN && !ADMIN_HASH ? 'Admin tools are switched off until an ADMIN_PASSWORD secret is added.' : 'Admin only.' });
 
 function config() {
   return { ...DEFAULT_CONFIG, ...store.getConfig() };
@@ -101,13 +110,13 @@ function summary(role) {
     membership: store.getMembership(),
     config: config(),
     benchmarks: store.getBenchmarks(),
-    meta: { dataVersion: cur.version, filename: cur.filename, uploadedAt: cur.uploadedAt, uploadedBy: cur.uploadedBy, liveMembershipConfigured: liveConfigured() },
+    meta: { dataVersion: cur.version, filename: cur.filename, uploadedAt: cur.uploadedAt, uploadedBy: cur.uploadedBy, liveMembershipConfigured: liveConfigured(), openViewing: OPEN, adminEnabled: !!ADMIN_HASH },
   });
   s.meta.role = role;
   return s;
 }
 
-app.get('/api/summary', (req, res) => res.json(summary(req.session.role)));
+app.get('/api/summary', (req, res) => res.json(summary(req.role)));
 
 // ---------- admin: upload, preview, publish, history ----------
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1 } });
@@ -218,8 +227,10 @@ app.post('/api/admin/benchmarks', adminOnly, (req, res) => {
   res.json({ ok: true });
 });
 
-// ---------- static front end ----------
-app.use(express.static(PUBLIC, { index: 'index.html' }));
+// ---------- static front end (only these files are ever served) ----------
+const PAGE_FILES = ['index.html', 'app.js', 'charts.js', 'style.css'];
+app.get('/', (req, res) => res.sendFile(path.join(PUBLIC, 'index.html')));
+for (const f of PAGE_FILES) app.get('/' + f, (req, res) => res.sendFile(path.join(PUBLIC, f)));
 
 export { app };
 

@@ -47,6 +47,7 @@ function board() {
   return `
   <div class="page-title"><h1>Board Summary</h1></div>
   <p class="sub">Entries across the State Championship events. Data from ${esc(S.meta.filename)} (version ${S.meta.dataVersion}).</p>
+  ${S.meta.openViewing && S.meta.role !== 'admin' ? '<div class="warn" style="margin-bottom:16px">Open viewing mode: anyone with this link can see this page. Passwords can be added later to lock it.</div>' : ''}
   <div class="hero">
     <div class="card"><span class="label">Core events entries, ${L}</span><div class="big">${fmt(b.currentCore)}</div>
       <p class="small muted" style="margin:10px 0 0">Seven core events: ${esc(b.coreEvents.join(', '))}. These are the events that have run in ${L}, so comparisons are like for like.</p></div>
@@ -295,7 +296,11 @@ async function render() {
   const k = PAGES[key] ? key : 'board';
   const items = Object.entries(PAGES).filter(([id]) => id !== 'admin' || S.meta.role === 'admin');
   $('nav').innerHTML = items.map(([id, [name]]) => `<a href="#/${id}" class="${id === k ? 'on' : ''}">${name}</a>`).join('');
-  $('who').textContent = S.meta.role === 'admin' ? 'Admin' : 'Viewer';
+  const open = S.meta.openViewing && S.meta.role !== 'admin';
+  $('who').firstChild.textContent = open ? 'Open viewing (no login)' : S.meta.role === 'admin' ? 'Admin' : 'Viewer';
+  document.querySelector('.who form').style.display = open ? 'none' : '';
+  const link = $('admin-link');
+  if (link) link.style.display = open && S.meta.adminEnabled ? '' : 'none';
   app.innerHTML = await page[1]();
   document.title = `${page[0]} | SLSQ Sport Participation`;
 }

@@ -13,6 +13,10 @@ Maroon theme. Whole site needs a login (Viewer for exec and board, Admin for the
 
 The command-line route below does the same job.
 
+## Open viewing mode (no passwords yet)
+
+While `OPEN_VIEWING = "yes"` is in `fly.toml` and no `VIEWER_PASSWORD` is set, anyone with the link can view the dashboard. Admin tools (uploads, corrections, membership entry) stay off. To lock it later, add `VIEWER_PASSWORD` and `ADMIN_PASSWORD` as Fly secrets and remove the `OPEN_VIEWING` line. To switch on Admin tools while keeping viewing open, add only `ADMIN_PASSWORD` and sign in at `/login`.
+
 ## Put it on Fly.io with the command line (dev)
 
 You need the Fly CLI (`fly`) installed and to be signed in (`fly auth login`). Run these from this folder.
